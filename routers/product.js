@@ -2,6 +2,8 @@ const express = require("express");
 const router = express.Router();
 const mongoose = require("mongoose");
 const multer = require("multer");
+const cloudinary = require("cloudinary").v2;
+const { CloudinaryStorage } = require("multer-storage-cloudinary");
 
 const { Brand } = require("../models/brand");
 const { Category } = require("../models/category");
@@ -11,23 +13,16 @@ const { Size } = require("../models/size");
 const { Type } = require("../models/type");
 const filters = require("./query/filters");
 
-const FILE_TYPE_MAP = {
-  "image/png": "png",
-  "image/jpeg": "jpeg",
-  "image/jpg": "jpg",
-};
+cloudinary.config({
+  cloud_name: "dgr6rk06b",
+  api_key: "841169737561656",
+  api_secret: "1im0N0naOYCAbUUQpla6uE-KPlM",
+});
 
-const storage = multer.diskStorage({
-  destination: function (req, file, cb) {
-    const isValid = FILE_TYPE_MAP[file.mimetype];
-    let uploadError = new Error("Invalid image type!");
-    if (isValid) uploadError = null;
-    cb(uploadError, "public/uploads");
-  },
-  filename: function (req, file, cb) {
-    const fileName = file.originalname.replace(" ", "_");
-    // const extension = FILE_TYPE_MAP[file.mimetype];
-    cb(null, `${Date.now()}-${fileName}`);
+const storage = new CloudinaryStorage({
+  cloudinary: cloudinary,
+  params: {
+    folder: "DEV",
   },
 });
 
@@ -100,12 +95,9 @@ router.post(`/`, uploadOption.single("image"), async (req, res) => {
   const file = req.file;
   if (!file) res.send("No image is requested!");
 
-  const filename = file.filename;
-  const basePath = `${req.protocol}://${req.get("host")}/public/uploads/`;
-
   let product = new Product({
     name: req.body.name,
-    image: `${basePath}${filename}`,
+    image: req.file.path,
     brand: req.body.brand,
     category: req.body.category,
     size: req.body.size,
