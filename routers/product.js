@@ -157,20 +157,10 @@ router.put(`/image/:id`, uploadOption.single("image"), async (req, res) => {
   const product = await Product.findById(req.params.id);
   if (!product) res.status(404).send("Not Found!");
 
-  const file = req.file;
-  let imagePath;
-  if (file) {
-    const filename = file.filename;
-    const basePath = `${req.protocol}://${req.get("host")}/public/uploads/`;
-    imagePath = `${basePath}${filename}`;
-  } else {
-    imagePath = product.image;
-  }
-
   const imageUpdated = await Product.findByIdAndUpdate(
     req.params.id,
     {
-      image: imagePath,
+      image: req.file.path,
     },
     { new: true }
   ).populate("category brand color size type");
